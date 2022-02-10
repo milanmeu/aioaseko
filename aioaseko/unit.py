@@ -1,4 +1,4 @@
-# Copyright 2021, Milan Meulemans.
+# Copyright 2021, 2022 Milan Meulemans.
 #
 # This file is part of aioaseko.
 #
@@ -18,6 +18,7 @@
 """aioAseko unit."""
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from .variable import Variable
@@ -142,26 +143,10 @@ class Unit:
         self._water_flow: bool = not data.get("noWaterFlow", False)
 
 
+@dataclass(frozen=True)
 class UnitError:
     """Aseko unit error."""
 
-    def __init__(self, type: str, title: str, content: list[str]) -> None:
-        """Init unit error."""
-        self._type = type
-        self._title = title
-        self._content = content
-
-    @property
-    def type(self) -> str:
-        """Return type."""
-        return self._type
-
-    @property
-    def title(self) -> str:
-        """Return title."""
-        return self._title
-
-    @property
-    def content(self) -> list[str]:
-        """Return content."""
-        return self._content
+    type: str
+    title: str
+    content: list[str]

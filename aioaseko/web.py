@@ -1,4 +1,4 @@
-# Copyright 2021, Milan Meulemans.
+# Copyright 2021, 2022 Milan Meulemans.
 #
 # This file is part of aioaseko.
 #
@@ -17,6 +17,8 @@
 
 """aioAseko web API account."""
 from __future__ import annotations
+
+from dataclasses import dataclass
 
 from aiohttp import ClientError, ClientResponse, ClientSession
 
@@ -60,7 +62,7 @@ class WebAccount:
             },
         )
         data = await resp.json()
-        return AccountInfo(data["email"], data["userId"], data["language"])
+        return AccountInfo(data["email"], data["userId"], data.get("language"))
 
     async def get_units(self) -> list[Unit]:
         """Get units."""
@@ -82,31 +84,10 @@ class WebAccount:
         ]
 
 
+@dataclass(frozen=True)
 class AccountInfo:
     """Aseko account info."""
 
-    def __init__(
-        self,
-        email: str,
-        user_id: str,
-        language: str,
-    ) -> None:
-        """Init Aseko account info."""
-        self._email = email
-        self._user_id = user_id
-        self._language = language
-
-    @property
-    def email(self) -> str:
-        """Return email."""
-        return self._email
-
-    @property
-    def user_id(self) -> str:
-        """Return user id."""
-        return self._user_id
-
-    @property
-    def language(self) -> str:
-        """Return language."""
-        return self._language
+    email: str
+    user_id: str
+    language: str | None

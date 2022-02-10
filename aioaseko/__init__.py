@@ -1,4 +1,4 @@
-# Copyright 2021, Milan Meulemans.
+# Copyright 2021, 2022 Milan Meulemans.
 #
 # This file is part of aioaseko.
 #
