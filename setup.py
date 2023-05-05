@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as f:
 
 setup(
     name="aioaseko",
-    version="0.0.2",
+    version="0.0.3",
     author="Milan Meulemans",
     author_email="milan.meulemans@live.be",
     description="Async Python package for the Aseko Pool Live API",
@@ -33,5 +33,5 @@ setup(
     python_requires=">=3.8",
     packages=["aioaseko"],
     package_data={"aioaseko": ["py.typed"]},
-    install_requires=["aiohttp"]
+    install_requires=["aiohttp", "jwt", "time"]
 )
