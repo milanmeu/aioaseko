@@ -32,11 +32,10 @@ from time import time
 if TYPE_CHECKING:
     from aiohttp import ClientResponse, ClientSession
 
+TOKEN_EXPIRATION_OFFSET = 60
 
 class MobileAccount:
     """Aseko account."""
-
-    TOKEN_EXPIRATION_BUFFER = 60
 
     def __init__(
         self,
@@ -102,12 +101,15 @@ class MobileAccount:
     async def access_token(self) -> str | None:
         """Return access token."""
         now = time()
-        if (self.access_token_expiration <= now + self.TOKEN_EXPIRATION_BUFFER):
+        if (self.access_token_expiration is not None
+            and self.access_token_expiration <= now + TOKEN_EXPIRATION_OFFSET):
             self._access_token = None
             try:
-                await self.refresh()
+                if (self._refresh_token is not None):
+                    await self.refresh()
             except InvalidAuthCredentials:
-                await self.login()
+                if (self._username is not None and self._password is not None):
+                    await self.login()
         return self._access_token
 
     async def refresh(self) -> None:
