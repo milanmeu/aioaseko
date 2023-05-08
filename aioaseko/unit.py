@@ -136,11 +136,34 @@ class Unit:
                 variable.get("alarm", {}).get("active"),
                 variable.get("alarm", {}).get("minValue"),
                 variable.get("alarm", {}).get("maxValue"),
-            )
+            ) if variable["type"] != "electrodePower" else self.get_electrode_power(variable)
             for variable in data["variables"]
         ]
         self._has_alarm: bool = data["errorsAlarm"]["active"]
         self._water_flow: bool = not data.get("noWaterFlow", False)
+
+    def get_electrode_power(self, electrode_info: dict) -> Variable:
+        """Get electrode power variable."""
+        value = 0
+        match electrode_info["direction"]:
+            case "left":
+                value = electrode_info.get("leftValue")
+            case "right":
+                value = electrode_info.get("rightValue")
+
+        return Variable(
+                electrode_info["type"],
+                electrode_info["name"],
+                electrode_info["unit"],
+                electrode_info["icon"],
+                electrode_info["color"],
+                electrode_info["hasError"],
+                value,
+                electrode_info.get("required"),
+                electrode_info.get("alarm", {}).get("active"),
+                electrode_info.get("alarm", {}).get("minValue"),
+                electrode_info.get("alarm", {}).get("maxValue"),
+            )
 
 
 @dataclass(frozen=True)
