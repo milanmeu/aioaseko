@@ -96,7 +96,7 @@ class MobileAccount:
         """Return a valid access token."""
         if self._access_token is not None:
             assert self._access_token_expiration is not None
-            if self._access_token_expiration >= time() + TOKEN_EXPIRATION_BUFFER:
+            if self._access_token_expiration >= time() + TOKEN_EXPIRATION_OFFSET:
                 return self._access_token
         if self._refresh_token is not None:
             try:
