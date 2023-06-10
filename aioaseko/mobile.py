@@ -36,33 +36,27 @@ TOKEN_EXPIRATION_OFFSET = 60
 
 class MobileAccount:
     """Aseko account."""
+    
+    _access_token: str | None = None
+    _access_token_expiration: int | None = None
 
     def __init__(
         self,
         session: ClientSession,
         username: str | None = None,
         password: str | None = None,
-        access_token: str | None = None,
-        access_token_expiration: int | None = None,
         refresh_token: str | None = None,
     ) -> None:
         """Init Aseko account."""
         self._session = session
         self._username = username
         self._password = password
-        self._access_token = access_token
-        self._access_token_expiration = access_token_expiration
         self._refresh_token = refresh_token
 
     @property
     def refresh_token(self) -> str | None:
         """Return refresh token."""
         return self._refresh_token
-
-    @property
-    def access_token_expiration(self) -> int | None:
-        """Return access token expiration."""
-        return self._access_token_expiration
 
     async def _request(
         self, method: str, path: str, data: dict | None = None
@@ -74,7 +68,7 @@ class MobileAccount:
             data=data,
             headers=None
             if self._access_token is None
-            else {"access-token": await self.access_token()},
+            else {"access-token": await self._get_valid_access_token()},
         )
         if resp.status == 401:
             raise InvalidAuthCredentials
@@ -96,21 +90,27 @@ class MobileAccount:
             },
         )
         data = await resp.json()
-        self.retrieve_tokens(data)
+        self._retrieve_tokens(data)
 
-    async def access_token(self) -> str | None:
-        """Return access token."""
-        now = time()
-        if (self.access_token_expiration is not None
-            and self.access_token_expiration <= now + TOKEN_EXPIRATION_OFFSET):
-            self._access_token = None
+    async def _get_valid_access_token(self) -> str:
+        """Return a valid access token."""
+        if self._access_token is not None:
+            assert self._access_token_expiration is not None
+            if self._access_token_expiration >= time() + TOKEN_EXPIRATION_BUFFER:
+                return self._access_token
+        if self._refresh_token is not None:
             try:
-                if (self._refresh_token is not None):
-                    await self.refresh()
+                await self._refresh()
             except InvalidAuthCredentials:
-                if (self._username is not None and self._password is not None):
-                    await self.login()
-        return self._access_token
+                self._refresh_token = None
+            else:
+                assert self._access_token is not None
+                return self._access_token
+        if self._username is not None and self._password is not None:
+            await self.login()
+            assert self._access_token is not None
+            return self._access_token
+        raise InvalidAuthCredentials("No valid refresh token or username and password available.")
 
     async def refresh(self) -> None:
         """Refresh access token for Aseko Pool Live with refresh token."""
@@ -123,7 +123,7 @@ class MobileAccount:
             },
         )
         data = await resp.json()
-        self.retrieve_tokens(data)
+        self._retrieve_tokens(data)
 
     async def logout(self) -> None:
         """Logout Aseko Pool Live account."""
@@ -151,7 +151,7 @@ class MobileAccount:
             for item in data["items"]
         ]
 
-    def retrieve_tokens(self, data: dict) -> None:
+    def _retrieve_tokens(self, data: dict) -> None:
         algorithm = get_unverified_header(data["accessToken"]).get('alg')
         token = decode(
             jwt=data["accessToken"],
