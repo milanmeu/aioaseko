@@ -112,7 +112,7 @@ class MobileAccount:
             return self._access_token
         raise InvalidAuthCredentials("No valid refresh token or username and password available.")
 
-    async def refresh(self) -> None:
+    async def _refresh(self) -> None:
         """Refresh access token for Aseko Pool Live with refresh token."""
         resp = await self._request(
             "post",
