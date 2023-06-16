@@ -59,15 +59,14 @@ class MobileAccount:
         return self._refresh_token
 
     async def _request(
-        self, method: str, path: str, data: dict | None = None
+        self, method: str, path: str, data: dict | None = None, auth: bool = True
     ) -> ClientResponse:
         """Make a request to the Aseko mobile API."""
         resp = await self._session.request(
             method,
             f"https://pool.aseko.com/api/v1/{path}",
             data=data,
-            headers=None
-            if self._access_token is None
+            headers=None if not auth or self._access_token is None
             else {"access-token": await self._get_valid_access_token()},
         )
         if resp.status == 401:
@@ -88,6 +87,7 @@ class MobileAccount:
                 "password": self._password,
                 "firebaseId": "",
             },
+            False,
         )
         data = await resp.json()
         self._retrieve_tokens(data)
@@ -98,6 +98,8 @@ class MobileAccount:
             assert self._access_token_expiration is not None
             if self._access_token_expiration >= time() + TOKEN_EXPIRATION_OFFSET:
                 return self._access_token
+            else:
+                self._access_token = None
         if self._refresh_token is not None:
             try:
                 await self._refresh()
@@ -121,6 +123,7 @@ class MobileAccount:
                 "refreshToken": self._refresh_token,
                 "firebaseId": "",
             },
+            False,
         )
         data = await resp.json()
         self._retrieve_tokens(data)
