@@ -66,7 +66,7 @@ class MobileAccount:
             method,
             f"https://pool.aseko.com/api/v1/{path}",
             data=data,
-            headers=None if not auth or self._access_token is None
+            headers=None if not auth
             else {"access-token": await self._get_valid_access_token()},
         )
         if resp.status == 401:
