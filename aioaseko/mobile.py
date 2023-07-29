@@ -64,7 +64,7 @@ class MobileAccount:
         """Make a request to the Aseko mobile API."""
         resp = await self._session.request(
             method,
-            f"https://pool.aseko.com/api/v1/{path}",
+            f"https://pool.aseko.com/api/v2/{path}",
             data=data,
             headers=None if not auth
             else {"access-token": await self._get_valid_access_token()},
