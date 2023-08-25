@@ -33,5 +33,5 @@ setup(
     python_requires=">=3.8",
     packages=["aioaseko"],
     package_data={"aioaseko": ["py.typed"]},
-    install_requires=["aiohttp", "pyjwt", "time"]
+    install_requires=["aiohttp", "pyjwt"]
 )
