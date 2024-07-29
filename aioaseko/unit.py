@@ -131,17 +131,30 @@ class Unit:
                 variable.get("icon"),
                 variable.get("color"),
                 variable["hasError"],
-                variable.get("currentValue"),
+                self.get_current_value(variable),
                 variable.get("required"),
                 variable.get("alarm", {}).get("active"),
                 variable.get("alarm", {}).get("minValue"),
                 variable.get("alarm", {}).get("maxValue"),
-            )
+            ) 
             for variable in data["variables"]
         ]
         self._has_alarm: bool = data["errorsAlarm"]["active"]
         self._water_flow: bool = not data.get("noWaterFlow", False)
 
+    def get_current_value(self, variable: dict) -> Variable:
+        """Get current value based on variable type."""
+
+        if variable["type"] != "electrodePower":
+            return variable.get("currentValue")
+        else:
+            match variable["direction"]:
+                case "left":
+                    return variable.get("leftValue")
+                case "right":
+                    return variable.get("rightValue")
+                case other:
+                    return 0
 
 @dataclass(frozen=True)
 class UnitError:
