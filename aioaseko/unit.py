@@ -1,4 +1,4 @@
-# Copyright 2021, 2022 Milan Meulemans.
+# Copyright 2021, 2022, 2024 Milan Meulemans.
 #
 # This file is part of aioaseko.
 #
@@ -128,8 +128,8 @@ class Unit:
                 variable["type"],
                 variable["name"],
                 variable["unit"],
-                variable["icon"],
-                variable["color"],
+                variable.get("icon"),
+                variable.get("color"),
                 variable["hasError"],
                 variable.get("currentValue"),
                 variable.get("required"),

@@ -3,7 +3,11 @@
 
 An async Python wrapper for the Aseko Pool Live API.
 
-The library is currently limited to the features available on pool.aseko.com.
+The library supports Aseko ASIN AQUA devices.
+The Aseko ASIN Pool is partially supported.
+The library is currently limited to a selection of features available on pool.aseko.com.
+Mobile-only features are not supported.
+
 
 ## Account
 The library provides a `MobileAccount` and `WebAccount` class to make authenticated requests to the mobile and web API, respectively.

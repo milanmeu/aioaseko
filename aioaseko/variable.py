@@ -1,4 +1,4 @@
-# Copyright 2021, 2022 Milan Meulemans.
+# Copyright 2021, 2022, 2024 Milan Meulemans.
 #
 # This file is part of aioaseko.
 #
@@ -28,8 +28,8 @@ class Variable:
     type: str
     name: str
     unit: str
-    icon: str
-    color: str
+    icon: str | None
+    color: str | None
     has_error: bool
     current_value: int | None
     required_value: int | None

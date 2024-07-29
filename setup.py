@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as f:
 
 setup(
     name="aioaseko",
-    version="0.1.1",
+    version="0.2.0",
     author="Milan Meulemans",
     author_email="milan.meulemans@live.be",
     description="Async Python package for the Aseko Pool Live API",
