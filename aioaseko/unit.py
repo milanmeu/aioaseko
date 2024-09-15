@@ -16,137 +16,132 @@
 # along with aioaseko.  If not, see <https://www.gnu.org/licenses/>.
 
 """aioAseko unit."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import TypeVar
 
-from .variable import Variable
+from .consumable import ElectrolyzerConsumable, LiquidConsumable
+from .status_value import StatusValues, StatusValueType, StringValue
 
-if TYPE_CHECKING:
-    from .mobile import MobileAccount
-    from .web import WebAccount
-
-
-class Unit:
-    """Aseko unit."""
-
-    def __init__(
-        self,
-        account: MobileAccount | WebAccount,
-        serial_number: int,
-        type: str,
-        name: str | None,
-        notes: str | None,
-        timezone: str,
-        is_online: bool,
-        date_last_data: str,
-        has_error: bool,
-    ) -> None:
-        """Init Aseko unit."""
-        self._account = account
-        self._serial_number = serial_number
-        self._type = type
-        self._name = name
-        self._notes = notes
-        self._timezone = timezone
-        self._is_online = is_online
-        self._date_last_data = date_last_data
-        self._has_error = has_error
-
-    @property
-    def serial_number(self) -> int:
-        """Return serial number, set on init."""
-        return self._serial_number
-
-    @property
-    def type(self) -> str:
-        """Return type, set on init."""
-        return self._type
-
-    @property
-    def name(self) -> str | None:
-        """Return name, set on init."""
-        return self._name
-
-    @property
-    def notes(self) -> str | None:
-        """Return notes, set on init."""
-        return self._notes
-
-    @property
-    def timezone(self) -> str:
-        """Return timezone, set on init."""
-        return self._timezone
-
-    @property
-    def is_online(self) -> bool:
-        """Return is online, set on init."""
-        return self._is_online
-
-    @property
-    def date_last_data(self) -> str:
-        """Return date of last data, set on init."""
-        return self._date_last_data
-
-    @property
-    def has_error(self) -> bool:
-        """Return has error, set on init and get_state()."""
-        return self._has_error
-
-    @property
-    def errors(self) -> list[UnitError]:
-        """Return errors, set on get_state()."""
-        return self._errors
-
-    @property
-    def variables(self) -> list[Variable]:
-        """Return variables, set on get_state()."""
-        return self._variables
-
-    @property
-    def has_alarm(self) -> bool:
-        """Return has alarm, set on get_state()."""
-        return self._has_alarm
-
-    @property
-    def water_flow(self) -> bool:
-        """Return water flow, set on get_state()."""
-        return self._water_flow
-
-    async def get_state(self) -> None:
-        """Get the unit state."""
-        resp = await self._account._request("get", f"units/{self._serial_number}")
-        data = await resp.json()
-        self._errors = [
-            UnitError(error["type"], error["title"], error["content"])
-            for error in data["errors"]
-        ]
-        self._has_error = len(self._errors) >= 1
-        self._variables = [
-            Variable(
-                variable["type"],
-                variable["name"],
-                variable["unit"],
-                variable.get("icon"),
-                variable.get("color"),
-                variable["hasError"],
-                variable.get("currentValue"),
-                variable.get("required"),
-                variable.get("alarm", {}).get("active"),
-                variable.get("alarm", {}).get("minValue"),
-                variable.get("alarm", {}).get("maxValue"),
-            )
-            for variable in data["variables"]
-        ]
-        self._has_alarm: bool = data["errorsAlarm"]["active"]
-        self._water_flow: bool = not data.get("noWaterFlow", False)
+T = TypeVar("T", int, float, str, bool)
 
 
 @dataclass(frozen=True)
-class UnitError:
-    """Aseko unit error."""
+class UnitNeverConnected:
+    """Aseko Unit that has never connected."""
 
-    type: str
-    title: str
-    content: list[str]
+    serial_number: str
+    name: str | None
+    note: str | None
+    position: int
+    online: bool
+
+
+@dataclass(frozen=True)
+class Unit:
+    """Aseko Unit that has connected."""
+
+    serial_number: str
+    name: str | None
+    note: str | None
+    online: bool
+    has_warning: bool
+    time_zone: str
+    position: int
+    brand_name: UnitBrandName | None
+    consumables: list[LiquidConsumable | ElectrolyzerConsumable]
+    status_values: StatusValues
+
+    @property
+    def air_temperature(self) -> float | None:
+        """Return the air temperature."""
+        return self._converted_status_value(StatusValueType.AIR_TEMPERATURE, float)
+
+    @property
+    def cl_free(self) -> float | None:
+        """Return the free chlorine."""
+        return self._converted_status_value(StatusValueType.CL_FREE, float)
+
+    @property
+    def dose(self) -> int | None:
+        """Return the dose."""
+        return self._converted_status_value(StatusValueType.DOSE, int)
+
+    @property
+    def electrolyzer(self) -> int | None:
+        """Return the electrolyzer."""
+        return self._converted_status_value(StatusValueType.ELECTROLYZER, int)
+
+    @property
+    def heating(self) -> bool | None:
+        """Return the heating status."""
+        return self._converted_status_value(StatusValueType.HEATING, bool)
+
+    @property
+    def ph(self) -> float | None:
+        """Return the pH value."""
+        return self._converted_status_value(StatusValueType.PH, float)
+
+    @property
+    def redox(self) -> int | None:
+        """Return the redox value."""
+        return self._converted_status_value(StatusValueType.REDOX, int)
+
+    @property
+    def salinity(self) -> float | None:
+        """Return the salinity."""
+        return self._converted_status_value(StatusValueType.SALINITY, float)
+
+    @property
+    def water_flow_to_probes(self) -> bool | None:
+        """Return the water flow to probes."""
+        return self._converted_status_value(StatusValueType.WATER_FLOW_TO_PROBES, bool)
+
+    @property
+    def water_temperature(self) -> float | None:
+        """Return the water temperature."""
+        return self._converted_status_value(StatusValueType.WATER_TEMPERATURE, float)
+
+    def _status_value_string_value(
+        self, status_value_type: StatusValueType
+    ) -> str | None:
+        """Return the status value of the given type, only for string values."""
+        for status_value in self.status_values.primary:
+            if status_value.type == status_value_type:
+                if isinstance(status_value.center, StringValue):
+                    return status_value.center.value
+                raise ValueError(f"Value of {status_value_type} is not a string.")
+        for status_value in self.status_values.secondary:
+            if status_value.type == status_value_type:
+                if isinstance(status_value.center, StringValue):
+                    return status_value.center.value
+                raise ValueError(f"Value of {status_value_type} is not a string.")
+        return None
+
+    def _converted_status_value(
+        self, status_value_type: StatusValueType, return_type: type[T]
+    ) -> T | None:
+        """Return the status value of the given status type, converted to the given type.
+
+        Only for status value types with string value.
+        """
+        value = self._status_value_string_value(status_value_type)
+        if value is None or value == "---":
+            return None
+        if return_type == type[bool]:
+            if value in ("YES", "ON"):
+                return return_type(True)
+            if value in ("NO", "OFF"):
+                return return_type(False)
+            raise ValueError(f"Value of {status_value_type} is not a boolean.")
+        return return_type(value)
+
+
+@dataclass(frozen=True)
+class UnitBrandName:
+    """Brand name of the unit."""
+
+    primary: str
+    secondary: str

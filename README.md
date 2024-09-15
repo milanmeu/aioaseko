@@ -5,14 +5,8 @@ An async Python wrapper for the Aseko Pool Live API.
 
 The library supports Aseko ASIN AQUA devices.
 The Aseko ASIN Pool is partially supported.
-The library is currently limited to a selection of features available on pool.aseko.com.
-Mobile-only features are not supported.
+The library is currently limited to a selection of features available on aseko.cloud.
 
-
-## Account
-The library provides a `MobileAccount` and `WebAccount` class to make authenticated requests to the mobile and web API, respectively.
-In this version of aioAseko, `WebAccount` can only be used to obtain `AccountInfo` and retrieve the account units.
-The mobile API does not provide `AccountInfo`, so `MobileAccount.login()` will return `None`.
 
 ## Installation
 ```bash
@@ -22,43 +16,33 @@ pip install aioaseko
 ## Usage
 ### Import
 ```python
-from aioaseko import MobileAccount
+from aioaseko import Aseko
 ```
 
-### Create a `aiohttp.ClientSession` to make requests
+### Create an `Aseko` instance and login
 ```python
-from aiohttp import ClientSession
-session = ClientSession()
-```
-
-### Create a `MobileAccount` instance and login
-```python
-account = MobileAccount(session, "aioAseko@example.com", "passw0rd")
-await account.login()
+api = Aseko("aioAseko@example.com", "passw0rd")
+await api.login()
 ```
 
 ## Example
 ```python
-from aiohttp import ClientSession
 from asyncio import run
 
-import aioaseko
+from aioaseko import Aseko, InvalidCredentials, Unit
 
 async def main():
-    async with ClientSession() as session:
-        account = aioaseko.MobileAccount(session, "aioAseko@example.com", "passw0rd")
-        try:
-            await account.login()
-        except aioaseko.InvalidAuthCredentials:
-            print("The username or password you entered is wrong.")
-            return
-        units = await account.get_units()
-        for unit in units:
-            print(unit.name)
-            await unit.get_state()
-            print(f"Water flow: {unit.water_flow}")
-            for variable in unit.variables:
-                print(variable.name, variable.current_value, variable.unit)
-        await account.logout()
+    api = Aseko("aioAseko@example.com", "passw0rd")
+    try:
+        await api.login()
+    except InvalidCredentials:
+        print("The username or password is wrong.")
+        return
+    units = await api.get_units()
+    for unit in units:
+        if isinstance(unit, Unit):
+            print(f"Unit: {unit.name} ({unit.serial_number})")
+            print(f"Air temperature: {unit.air_temperature}")
+            print(f"Water flow to probes: {unit.water_flow_to_probes}")
 run(main())
 ```
