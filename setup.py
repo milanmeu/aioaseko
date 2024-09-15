@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as f:
 
 setup(
     name="aioaseko",
-    version="0.2.0",
+    version="1.0.0",
     author="Milan Meulemans",
     author_email="milan.meulemans@live.be",
     description="Async Python package for the Aseko Pool Live API",
@@ -15,10 +15,11 @@ setup(
     long_description_content_type="text/markdown",
     url="https://github.com/milanmeu/aioaseko",
     project_urls={
-        "Say Thanks!": "https://saythanks.io/to/milan.meulemans@live.be",
+        "Homepage": "https://github.com/milanmeu/aioaseko",
         "Bug Tracker": "https://github.com/milanmeu/aioaseko/issues",
-        "Source Code": "https://github.com/milanmeu/aioaseko",
+        "Source Code": "https://github.com/milanmeu/aioaseko/tree/main/aioaseko",
         "Documentation": "https://github.com/milanmeu/aioaseko/blob/main/README.md",
+        "Donate": "https://github.com/sponsors/milanmeu",
     },
     classifiers=[
         "Programming Language :: Python :: 3",
@@ -30,8 +31,8 @@ setup(
         "Topic :: Home Automation",
         "Typing :: Typed",
     ],
-    python_requires=">=3.8",
+    python_requires=">=3.10",
     packages=["aioaseko"],
     package_data={"aioaseko": ["py.typed"]},
-    install_requires=["aiohttp", "pyjwt"]
+    install_requires=["aiohttp", "gql", "apischema"]
 )

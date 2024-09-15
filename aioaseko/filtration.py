@@ -15,12 +15,16 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with aioaseko.  If not, see <https://www.gnu.org/licenses/>.
 
-"""aioAseko."""
+"""aioAseko filtration."""
 
-from .aseko import *  # noqa: F401, F403
-from .consumable import *  # noqa: F401, F403
-from .exceptions import *  # noqa: F401, F403
-from .filtration import *  # noqa: F401, F403
-from .status_value import *  # noqa: F401, F403
-from .unit import *  # noqa: F401, F403
-from .user import *  # noqa: F401, F403
+from __future__ import annotations
+
+from dataclasses import dataclass
+
+
+@dataclass(frozen=True)
+class FiltrationInterval:
+    """Filtration interval."""
+
+    period: int
+    name: str

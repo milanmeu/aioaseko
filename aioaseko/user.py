@@ -15,24 +15,20 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with aioaseko.  If not, see <https://www.gnu.org/licenses/>.
 
-"""aioAseko variable."""
-from __future__ import annotations
+"""Aseko API user."""
 
 from dataclasses import dataclass
+from datetime import datetime
 
 
 @dataclass(frozen=True)
-class Variable:
-    """Aseko variable."""
+class User:
+    """Aseko API User."""
 
-    type: str
+    user_id: str
+    created_at: datetime
+    updated_at: datetime
     name: str
-    unit: str
-    icon: str | None
-    color: str | None
-    has_error: bool
-    current_value: int | None
-    required_value: int | None
-    has_alarm: bool | None
-    min_value: int | None
-    max_value: int | None
+    surname: str
+    language: str
+    is_active: bool

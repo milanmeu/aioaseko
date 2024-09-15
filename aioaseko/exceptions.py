@@ -1,4 +1,4 @@
-# Copyright 2021, 2022 Milan Meulemans.
+# Copyright 2021, 2022, 2024 Milan Meulemans.
 #
 # This file is part of aioaseko.
 #
@@ -18,9 +18,13 @@
 """aioAseko exceptions."""
 
 
-class InvalidAuthCredentials(Exception):
-    """Invalid authentication credentials."""
+class AsekoInvalidCredentials(Exception):
+    """Exception raised when invalid credentials are provided."""
 
 
-class APIUnavailable(Exception):
-    """API Unavailable."""
+class AsekoNotLoggedIn(Exception):
+    """Exception raised when not logged in."""
+
+
+class AsekoAPIError(Exception):
+    """Exception raised when an API communication error occurs."""
