@@ -130,7 +130,7 @@ class Unit:
         value = self._status_value_string_value(status_value_type)
         if value is None or value == "---":
             return None
-        if return_type == type[bool]:
+        if return_type is bool:
             if value in ("YES", "ON"):
                 return return_type(True)
             if value in ("NO", "OFF"):
