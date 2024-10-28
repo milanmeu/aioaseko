@@ -18,6 +18,7 @@
 """aioAseko Aseko API."""
 
 from datetime import datetime
+import aiofiles
 import logging
 from typing import Any, cast
 
@@ -27,6 +28,7 @@ from gql import Client
 from gql.dsl import DSLInlineFragment, DSLQuery, DSLSchema, dsl_gql, to_camel_case
 from gql.transport.aiohttp import AIOHTTPTransport, log as gql_log
 from gql.transport.exceptions import TransportQueryError
+from os import path
 from yarl import URL
 
 from .exceptions import AsekoAPIError, AsekoInvalidCredentials, AsekoNotLoggedIn
@@ -95,25 +97,31 @@ class Aseko:
         data = await resp.json()
         self._token = data["token"]
 
-    def _client(self) -> Client:
+    async def _client(self) -> Client:
         """Return the Aseko GraphQL client."""
         if self._token is None:
             raise AsekoNotLoggedIn
         transport = AIOHTTPTransport(
-            url=GRAPHQL_URL, headers={"Authorization": f"Bearer {self._token}"}
+            url=GRAPHQL_URL, headers={
+                "Authorization": f"Bearer {self._token}",
+                "User-Agent": "aioaseko",
+                "x-app-name": "aioaseko",
+            }
         )
-        return Client(transport=transport, fetch_schema_from_transport=True)
+        async with aiofiles.open(path.join(path.dirname(path.abspath(__file__)), 'schema.graphql'), mode='r') as source:
+            schema = await source.read()
+        return Client(transport=transport, schema=schema)
 
     async def _schema(self) -> DSLSchema:
         """Return the Aseko GraphQL schema."""
         if self._cached_schema is None:
-            async with self._client() as session:
+            async with await self._client() as session:
                 self._cached_schema = DSLSchema(session.client.schema)
         return self._cached_schema
 
     async def _query(self, query: DSLQuery, retry: bool = True) -> dict[str, Any]:
         """Query the Aseko GraphQL API."""
-        async with self._client() as session:
+        async with await self._client() as session:
             document = dsl_gql(query)
             try:
                 result = await session.execute(document)

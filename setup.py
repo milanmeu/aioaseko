@@ -34,5 +34,5 @@ setup(
     python_requires=">=3.10",
     packages=["aioaseko"],
     package_data={"aioaseko": ["py.typed"]},
-    install_requires=["aiohttp", "gql", "apischema"]
+    install_requires=["aiohttp", "gql", "apischema", "aiofiles"]
 )
