@@ -1,0 +1,772 @@
+directive @oneOf on INPUT_OBJECT | FIELD_DEFINITION
+
+type Query {
+  unitModels: [UnitModel!]!
+  _: Boolean
+  units(searchQuery: String, after: String, first: Int): UnitList!
+  unitBySerialNumber(serialNumber: String!): UnitResult!
+}
+
+type Mutation {
+  resetWaterFillingCounter(
+    serialNumber: String!
+  ): ResetWaterFillingCounterResult!
+  updateWaterFillingSpeed(
+    serialNumber: String!
+    litersPerMinute: Float
+  ): UpdateWaterFillingSpeedResult!
+  resetHeatingCounter(serialNumber: String!): ResetHeatingCounterResult!
+  updateNotification(
+    update: UpdateNotificationInput!
+  ): UpdateNotificationResult!
+  refillCanister(refill: RefillCanisterInput!): RefillCanisterResult!
+  changeTube(change: ChangeTubeInput!): ChangeTubeResult!
+  configureCanisterWarning(
+    update: ConfigureCanisterWarningInput!
+  ): ConfigureCanisterWarningResult!
+  _: Boolean
+  pairUnit(pairing: PairUnitInput!): PairUnitResult!
+  unpairUnit(serialNumber: String!): UnpairUnitResult!
+  updateUnit(update: UpdateUnitInput!): UpdateUnitResult!
+  updatePosition(update: UpdatePositionInput!): ChangePositionResult!
+}
+
+input ConfigureCanisterWarningInput {
+  serialNumber: String!
+  type: RefillableCanisterType!
+  warningLevel: Percent!
+  notificationEnabled: Boolean!
+}
+
+input RefillCanisterInput {
+  serialNumber: String!
+  type: RefillableCanisterType!
+  volume: Int!
+}
+
+input ChangeTubeInput {
+  serialNumber: String!
+  type: RefillableCanisterType!
+}
+
+input UpdateNotificationInput {
+  serialNumber: String!
+  type: NotificationType!
+  enabled: Boolean!
+  lowWarningLevel: String
+  highWarningLevel: String
+}
+
+enum RequiredValueType {
+  ALGICIDE_DOSE
+  CL_FREE
+  DOSE
+  FLOCCULANT_DOSE
+  PH
+  REDOX
+  WATER_TEMPERATURE
+}
+
+enum ConfigurationValueType {
+  DELAY_TIME_AT_DOSE
+  DELAY_TIME_AT_STARTUP
+  MAX_DISINFECTION_CONCENTRATION_PER_HOUR
+  PH_MINUS_CONCENTRATION
+  PH_PLUS_CONCENTRATION
+  POOL_VOLUME
+}
+
+enum RefillableCanisterType {
+  ALGICIDE
+  CL
+  FILTER_DISINFECTION
+  FLOCCULANT
+  PH_MINUS
+  PH_PLUS
+}
+
+enum ConsumableType {
+  ALGICIDE
+  CL
+  ELECTRODE
+  FILTER_DISINFECTION
+  FLOCCULANT
+  PH_MINUS
+  PH_PLUS
+}
+
+enum NotificationType {
+  AIR_TEMPERATURE
+  CL_BOUNDED
+  CL_FREE
+  ELECTROLYZER
+  OFFLINE
+  PH
+  REDOX
+  SALINITY
+  SOLAR_TEMPERATURE
+  UNIT_ERROR
+  WATER_TEMPERATURE
+}
+
+enum TimelineCategory {
+  CALIBRATION
+  CONFIGURATION
+  ERROR
+  REQUIRED
+}
+
+enum SpeedBetweenFiltrationIntervals {
+  LOW
+  OFF
+}
+
+type UnitModel {
+  tabs: Tabs!
+  availableProtocolMetrics: [ProtocolMetric!]!
+  id: Ulid!
+  internalName: String!
+}
+
+type ProtocolMetric {
+  type: MetricKey!
+  label: String!
+}
+
+type NotificationNotAllowedError {
+  serialNumber: String!
+  type: NotificationType!
+}
+
+type HeatingNotAllowedError {
+  serialNumber: String!
+}
+
+type WaterFillingNotAllowedError {
+  serialNumber: String!
+}
+
+type CanisterNotAllowedError {
+  serialNumber: String!
+  type: RefillableCanisterType!
+}
+
+type TubeNotAllowedError {
+  serialNumber: String!
+  type: RefillableCanisterType!
+}
+
+type Unit {
+  requiredValues: [RequiredValue!]!
+  configurationValues: [ConfigurationValue!]!
+  filtrationConfiguration: FiltrationConfiguration
+  filtrationHistory(cursor: String, first: Int): FiltrationHistory
+  timeline(after: String, first: Int, category: TimelineCategory): Timeline!
+  consumables: [Consumable!]!
+  waterFilling: WaterFilling
+  heating: Heating
+  chartData(from: DateTimeISO!, to: DateTimeISO!): [ChartLineGroup!]!
+  notificationConfiguration: [NotificationConfiguration!]!
+  serialNumber: String!
+  name: String
+  note: String
+  brandName: UnitBrandName
+  offlineFor: SecondsDuration
+  online: Boolean!
+  hasWarning: Boolean!
+  backwash: BackwashStatus
+  statusValues: StatusValues!
+  statusMessages: [StatusMessage!]!
+  timeZone: String!
+  position: Int!
+  unitModel: UnitModel!
+}
+
+type FiltrationInterval {
+  period: Int!
+  overrideIntervalText: String
+  speed: String
+  name: String!
+  start: TimeHHMM
+  end: TimeHHMM
+  poolFlow: PoolFlowType
+}
+
+type Tabs {
+  hideProtocolExport: Boolean!
+  hideConsumables: Boolean!
+  hideNotifications: Boolean!
+}
+
+type TimelineEntry {
+  time: DateTimeISO!
+  category: TimelineCategory!
+  value: TimelineValue!
+}
+
+union TimelineValue = TimelineChangeValue | TimelineStatusValue
+
+type Timeline {
+  cursor: String
+  entries: [TimelineEntry!]!
+}
+
+type TimelineChangeValue {
+  title: String!
+  from: String!
+  to: String!
+}
+
+type TimelineStatusValue {
+  title: String!
+}
+
+type Heating {
+  id: Ulid!
+  totalTime: String!
+  totalTimeFromLastReset: String!
+  lastReset: String
+}
+
+type WaterFilling {
+  id: Ulid!
+  totalTime: String!
+  totalLiters: String
+  totalTimeFromLastReset: String!
+  totalLitersFromLastReset: String
+  lastReset: String
+  litersPerMinute: Float
+  waterLevel: String
+  waterLevelStateText: String
+  configuration: WaterFillingConfiguration!
+}
+
+type NotificationConfiguration {
+  id: Ulid!
+  type: NotificationType!
+  name: String!
+  enabled: Boolean!
+  lowWarningLevel: String
+  highWarningLevel: String
+  color: HexColor
+  textColor: HexColor
+  currentValue: String
+  suffix: String
+  hasWarning: Boolean!
+  possibleWarningLevels: [String!]
+}
+
+interface ConsumableInterface {
+  type: ConsumableType!
+  name: String!
+  color: HexColor
+}
+
+union Consumable = LiquidConsumable | ElectrolyzerConsumable
+
+type LiquidConsumable implements ConsumableInterface {
+  type: ConsumableType!
+  name: String!
+  color: HexColor
+  canister: Canister!
+  tube: Tube!
+}
+
+type ElectrolyzerConsumable implements ConsumableInterface {
+  type: ConsumableType!
+  name: String!
+  color: HexColor
+  electrode: Electrode!
+}
+
+type Canister {
+  id: Ulid!
+  name: String! @deprecated(reason: "Use consumable name instead")
+  remaining: Percent!
+  hasWarning: Boolean!
+  volume: Int
+  warningLevel: Percent!
+  notificationEnabled: Boolean!
+  dataSeries: [DataSeriesPoint!]!
+  weekConsumption: Float!
+  suffix: String!
+  possibleWarningLevels: [Int!]!
+  possibleVolumeLevels: [Int!]!
+}
+
+type Tube {
+  id: Ulid!
+  remaining: Percent!
+  hasWarning: Boolean!
+  notifyAt: Percent! @deprecated(reason: "There is no use for this field")
+  remainingDays: DaysDuration!
+}
+
+type Electrode {
+  runningMinutes: Int!
+    @deprecated(reason: "There is no remaining time for electrodes")
+  remaining: Percent!
+  weekChlorineProduction: Float!
+  suffix: String!
+  hasWarning: Boolean!
+  notificationEnabled: Boolean!
+    @deprecated(reason: "Electrode warnings cannot be enabled or disabled")
+  dataSeries: [DataSeriesPoint!]!
+}
+
+type FiltrationHistory {
+  cursor: String
+  entries: [FiltrationEntry!]!
+}
+
+type FiltrationEntry {
+  date: DateISO!
+  elapsedTime: TimeHHMM!
+  requiredTime: TimeHHMM
+    @deprecated(reason: "Use requiredTime from configuration")
+  dataSeries: [DataSeriesPoint!]
+}
+
+type ConfigurationValue {
+  type: ConfigurationValueType!
+  name: String!
+  value: String!
+  suffix: String!
+}
+
+type FiltrationConfiguration {
+  intervals: [FiltrationInterval!]!
+  speedBetweenFiltrationIntervals: SpeedBetweenFiltrationIntervals
+  nonstop: Boolean!
+  requiredTime: TimeHHMM
+}
+
+type RequiredValue {
+  type: RequiredValueType!
+  name: String!
+  color: HexColor
+  value: String!
+  suffix: String!
+}
+
+union ResetWaterFillingCounterResult =
+    WaterFilling
+  | WaterFillingNotAllowedError
+  | UnitNotPairedError
+
+union UpdateWaterFillingSpeedResult =
+    WaterFilling
+  | WaterFillingNotAllowedError
+  | UnitNotPairedError
+
+union ResetHeatingCounterResult =
+    Heating
+  | HeatingNotAllowedError
+  | UnitNotPairedError
+
+union UpdateNotificationResult =
+    NotificationConfiguration
+  | UnitNotPairedError
+  | NotificationNotAllowedError
+
+union RefillCanisterResult =
+    Canister
+  | UnitNotPairedError
+  | CanisterNotAllowedError
+
+union ChangeTubeResult = Tube | UnitNotPairedError | TubeNotAllowedError
+
+union ConfigureCanisterWarningResult =
+    Canister
+  | UnitNotPairedError
+  | CanisterNotAllowedError
+
+type ChartLineGroup {
+  name: String
+  lines: [ChartLine!]!
+}
+
+type ChartLine {
+  type: ChartLineType!
+  style: ChartLineStyle!
+  color: HexColor!
+  metrics: [Metric!]!
+  prefix: String!
+}
+
+type Metric {
+  metricKey: MetricKey!
+  metricType: MetricType!
+  prefix: String!
+  suffix: String!
+  color: HexColor
+  iconName: String
+  data: [DataSeriesPoint!]!
+}
+
+enum MetricType {
+  PRIMARY
+  REQUIRED
+  SECONDARY
+}
+
+enum MetricKey {
+  AIR_TEMPERATURE
+  ALGICIDE
+  ALGICIDE_REQUIRED
+  BACKWASH
+  BUILD_IN_RELAY
+  CL
+  CL_BOUNDED
+  CL_BOUNDED_MV
+  CL_FREE
+  CL_FREE_MV
+  CL_FREE_REQUIRED
+  COVER_STATE_CLOSED
+  COVER_STATE_CLOSING
+  COVER_STATE_OPEN
+  COVER_STATE_OPENING
+  COVER_STATE_UNKNOWN
+  ELECTRODE_DIRECTION
+  ELECTRODE_POWER
+  ELECTROLYZER
+  FILTRATION
+  FLOCCULANT
+  FLOCCULANT_COVREX @deprecated(reason: "Use FLOCCULANT instead")
+  FLOCCULANT_REQUIRED
+  HEATING
+  MODE_AUTO
+  MODE_ECO
+  MODE_OFF
+  MODE_ON
+  MODE_PARTY
+  MODE_WINTER
+  NO_FLOW
+  OFFLINE
+  OVERFLOW
+  PH
+  PH_MINUS
+  PH_PLUS
+  PH_REQUIRED
+  REDOX
+  REDOX_PRO @deprecated(reason: "Use REDOX instead")
+  REDOX_REQUIRED
+  RELAY_1
+  RELAY_2
+  RELAY_3
+  RELAY_4
+  SALINITY
+  SOLAR
+  SOLAR_TEMPERATURE
+  WARNING
+  WATER_FILLING
+  WATER_FILLING_SPEED
+  WATER_LEVEL
+  WATER_TEMPERATURE
+  WATER_TEMPERATURE_REQUIRED
+}
+
+enum ChartLineStyle {
+  BOOLEAN
+  DISJOINT_MULTI_BOOLEAN
+  STEP
+}
+
+enum ChartLineType {
+  AIR_TEMPERATURE
+  ALGICIDE
+  BACKWASH
+  BUILD_IN_RELAY
+  CL
+  CL_BOUNDED
+  CL_COVREX
+  CL_FREE
+  CL_FREE_COVREX
+  COVER_STATE
+  ELECTROLYZER
+  FILTRATION
+  FLOCCULANT
+  FLOCCULANT_COVREX
+  HEATING
+  MODES_ASEKO
+  MODES_COVREX
+  NO_FLOW
+  OFFLINE
+  OVERFLOW
+  PH
+  PH_MINUS
+  PH_PLUS
+  REDOX
+  REDOX_COVREX
+  REDOX_PRO
+  RELAY_1
+  RELAY_2
+  RELAY_3
+  RELAY_4
+  SALINITY
+  SOLAR
+  SOLAR_TEMPERATURE
+  WARNING
+  WATER_FILLING
+  WATER_LEVEL
+  WATER_TEMPERATURE
+}
+
+type Subscription {
+  _: Boolean
+  unitStatus(serialNumber: String!): UnitStatusResponse!
+}
+
+# UUID custom scalar type
+scalar UUID
+
+# Ulid custom scalar type
+scalar Ulid
+
+# MinutesDuration as unsigned integer
+scalar MinutesDuration
+
+# SecondsDuration as unsigned integer
+scalar SecondsDuration
+
+# DaysDuration as unsigned integer
+scalar DaysDuration
+
+# Time in HH:MM format
+scalar TimeHHMM
+
+# Hex color in `^#[\da-fA-F]{6}$` format
+scalar HexColor
+
+# A date in `YYYY-mm-dd` format
+scalar DateISO
+
+# A date time in ISO 8601 format
+scalar DateTimeISO
+
+# A percentage represented as an integer between 0 and 100, inclusive.
+scalar Percent
+
+# DataSeriesPoint as tuple of [number, number | null] representing [timestamp, value]. Timestamp is in seconds since epoch.
+scalar DataSeriesPoint
+
+input UpdatePositionInput {
+  serialNumber: String!
+  position: Int!
+}
+
+input UpdateUnitInput {
+  serialNumber: String!
+  name: String
+  note: String
+}
+
+input PairUnitInput {
+  serialNumber: String!
+  name: String
+  note: String
+}
+
+type UnitList {
+  cursor: String
+  units: [UnitItem!]!
+}
+
+type UnitNotFoundError {
+  serialNumber: String!
+}
+
+type UnitAccessDeniedError {
+  serialNumber: String!
+  message: String
+}
+
+type UnitNotPairedError {
+  serialNumber: String!
+}
+
+type UnitAlreadyPairedError {
+  serialNumber: String!
+}
+
+union UnitItem = Unit | UnitNeverConnected
+
+union UnitResult =
+    Unit
+  | UnitNeverConnected
+  | UnitNotFoundError
+  | UnitAccessDeniedError
+
+type UnitUnpaired {
+  serialNumber: String!
+}
+
+type UnitNeverConnected {
+  serialNumber: String!
+  name: String
+  note: String
+  position: Int!
+  online: Boolean!
+  statusMessages: [StatusMessage!]!
+}
+
+type UnitBrandName {
+  id: Ulid!
+  primary: String!
+  secondary: String!
+}
+
+type BackwashStatus {
+  id: Ulid!
+  running: Boolean!
+  duration: SecondsDuration
+  elapsed: SecondsDuration
+  configuration: BackwashConfiguration!
+}
+
+type BackwashConfiguration {
+  enabled: Boolean!
+  oncePerXDays: String!
+  start: String!
+  takes: String!
+}
+
+type WaterFillingConfiguration {
+  levelHigh: String!
+  levelLow: String!
+  levelMax: String!
+  levelMin: String!
+  maxFillingTime: String!
+  enabled: Boolean!
+}
+
+type StatusValues {
+  primary: [StatusValue!]!
+  secondary: [StatusValue!]!
+}
+
+type StatusValue {
+  id: Ulid!
+  type: StatusValueType!
+  backgroundColor: HexColor
+  textColor: HexColor
+  topLeft: String
+  topRight: String
+  center: CenterValue!
+  bottomRight: String
+  bottomLeft: CornerValue
+}
+
+union CenterValue = StringValue | UpcomingFiltrationPeriodValue
+
+type StringValue {
+  value: String!
+  iconName: String
+}
+
+type UpcomingFiltrationPeriodValue {
+  configuration: FiltrationInterval!
+  isNext: Boolean!
+}
+
+type CornerValue {
+  prefix: String!
+  suffix: String
+  style: CornerValueStyle!
+}
+
+type UnitStatus {
+  statusValues: StatusValues!
+  statusMessages: [StatusMessage!]!
+  backwash: BackwashStatus
+}
+
+union UnitStatusResponse = UnitStatus | UnitNotPairedError | UnitNotFoundError
+
+enum PoolFlowType {
+  BOTTOM
+  OVERFLOW
+}
+
+enum CornerValueStyle {
+  BORDER_PREFIX
+  BORDER_SUFFIX
+  HIGHLIGHT_PREFIX
+  HIGHLIGHT_SUFFIX
+  NORMAL
+}
+
+type StatusMessage {
+  type: StatusMessageType!
+  severity: Severity!
+  message: String!
+  detail: String
+}
+
+enum StatusMessageType {
+  BACKWASH_RUNNING
+  CLOCK_MEMORY_BATTERY_LOW
+  COVER_ERROR_CURRENT
+  COVER_ERROR_PULSES
+  MAXIMUM_DISINFECTION_DOSE_EXCEEDED
+  MAXIMUM_HOURLY_DISINFECTION_DOSE_EXCEEDED
+  NO_WATER_FLOW_TO_PROBES
+  PH_TOO_LOW_FOR_ELECTROLYSIS
+  PH_VALUE_CHANGING_TOO_RAPIDLY
+  PUMP_OVERHEATED
+  SOLAR_HIGH_TEMPERATURE
+  SOLAR_NO_TEMPERATURE
+  STOPPED_BY_TIMER
+  TOO_LITTLE_SALT_PER_HOUR
+  TOO_MANY_PH_DOSING_ATTEMPTS_WITHOUT_CHANGE
+  TOO_MUCH_SALT_PER_HOUR
+  UNIT_OFFLINE
+  WATER_LEVEL_TOO_HIGH
+  WATER_LEVEL_TOO_LOW
+  WATER_REFILLING_TIME_EXCEEDED
+  WINTER_MODE_ACTIVATED
+}
+
+enum Severity {
+  ERROR
+  INFO
+  WARNING
+}
+
+enum StatusValueType {
+  AIR_TEMPERATURE
+  CL_FREE
+  DOSE
+  ELECTROLYZER
+  FILTER_FLOW
+  FILTRATION_PUMP_SPEED
+  HEATING
+  LIGHTS_STATE
+  MODE
+  PH
+  POOL_FLOW
+  PUMP_SPEED
+  REDOX
+  REDOX_PRO
+  SALINITY
+  SOLAR
+  SOLAR_TEMPERATURE
+  SOLAR_TIMER
+  UPCOMING_FILTRATION_PERIOD
+  WATER_FLOW_TO_PROBES
+  WATER_LEVEL
+  WATER_TEMPERATURE
+}
+
+union PairUnitResult =
+    Unit
+  | UnitNeverConnected
+  | UnitNotFoundError
+  | UnitAccessDeniedError
+  | UnitAlreadyPairedError
+
+union UnpairUnitResult = UnitUnpaired | UnitNotPairedError
+
+union UpdateUnitResult = Unit | UnitNeverConnected | UnitNotPairedError
+
+union ChangePositionResult = Unit | UnitNeverConnected | UnitNotPairedError
